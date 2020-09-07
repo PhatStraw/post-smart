@@ -12,15 +12,16 @@ const chromeOptions = {
 const key = 'aeb6076754a2494d821ff6e683aa10d2'
 
 export default async (req, res) => {
+  let images
   try {
     const browser = await puppeteer.launch(chromeOptions)
     const page = await browser.newPage()
     await page.goto('https://poshmark.com/login')
-    const cap = await page.$('.g-recaptcha-con')
-    const res1 = await page.$('#g-recaptcha-response')
-    if (res1) {
+    const captchaPresent = await page.$('#g-recaptcha-response')
+    if (captchaPresent) {
+      console.log('captcha present, 21')
       const requestId = await initiateCaptchaRequest(key)
-      console.log('Request id', requestId)
+
       await page.type(
         '.form-group #login_form_username_email',
         'kevinsims1@outlook.com'
@@ -28,22 +29,25 @@ export default async (req, res) => {
       await page.type('#login_form_password', 'Wakeland1!')
 
       const response = await pollForRequestResults(key, requestId)
-      console.log('26')
+
       await page.evaluate(
         `document.getElementById("g-recaptcha-response").innerHTML="${response}";`
       )
-      console.log('30')
+
       await page.click('.btn-primary')
-      const share = await page.$(
-        '.sell'
-      )
+
+      const share = await page.$('.sell')
 
       if (share) {
-        await page.click('.sell')
+        await postPosh()
       }
+
       res.status(200).json({ data: 'yes' })
     }
+
     //first attempt
+    console.log('first attempt, 70')
+
     await page.type(
       '.form-group #login_form_username_email',
       'kevinsims1@outlook.com'
@@ -54,11 +58,12 @@ export default async (req, res) => {
     const share = await page.$('.sell')
 
     if (share) {
-      await page.click('.sell')
-      
+      await postPosh()
     }
 
     //second request
+    console.log('second attempt, 129')
+
     const requestId = await initiateCaptchaRequest(key)
 
     await page.type('#login_form_password', 'Wakeland1!')
@@ -70,14 +75,88 @@ export default async (req, res) => {
     )
 
     await page.click('.btn-primary')
+    console.log('primary btn, 78')
 
     page.click('.sell')
+    console.log('sell btn, 81')
+
+    await page.waitForSelector('input[type=file]')
+    await page.waitFor(1000)
+
+    // get the ElementHandle of the selector above
+    const inputUploadHandle = await page.$('input[type=file]')
+
+    if (inputUploadHandle) {
+      await inputUploadHandle.uploadFile('public/hola.png')
+
+      await page.waitForSelector('.form__actions > .btn--primary')
+      await page.waitFor(1000)
+
+      page.click('.form__actions > .btn--primary')
+      
+    }
+
+    await page.$eval(
+      '.listing-editor__title__text__suffix',
+      (e) => (e.value = 'Ralph Lauren Hoodie')
+    )
+
+    await page.$eval(
+      '.listing-editor__description__input',
+      (e) => (e.value = 'Comfiest sweater ive ever owned')
+    )
+
+    await page.click('[data-et-name=category]')
+
+    await page.$$eval('.dropdown__menu__item', (elements) => {
+      const element = elements.find(
+        (element) => element.innerHTML === '<a>Tops</a>'
+      )
+      element.click()
+    })
+
+    // await postPosh(page)
 
     res.status(200).json({ data: 'yes' })
   } catch (err) {
     console.log(err)
     res.status(404).json(err)
   }
+}
+
+async function postPosh(page) {
+  page.click('.sell')
+
+  await page.waitForSelector('input[type=file]')
+  await page.waitFor(1000)
+
+  // get the ElementHandle of the selector above
+  const inputUploadHandle = await page.$('input[type=file]')
+
+  if (inputUploadHandle) {
+    await inputUploadHandle.uploadFile('public/hola.png')
+
+    page.click('.form__actions > .btn--primary')
+  }
+
+  await page.$eval(
+    '.listing-editor__title__text__suffix',
+    (e) => (e.value = 'Ralph Lauren Hoodie')
+  )
+
+  await page.$eval(
+    '.listing-editor__description__input',
+    (e) => (e.value = 'Comfiest sweater ive ever owned')
+  )
+
+  await page.click('[data-et-name=category]')
+
+  await page.$$eval('.dropdown__menu__item', (elements) => {
+    const element = elements.find(
+      (element) => element.innerHTML === '<a>Tops</a>'
+    )
+    element.click()
+  })
 }
 
 async function initiateCaptchaRequest(apiKey) {
