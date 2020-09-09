@@ -39,7 +39,42 @@ export default async (req, res) => {
       const share = await page.$('.sell')
 
       if (share) {
-        await postPosh()
+        page.click('.sell')
+        console.log('sell btn, 81')
+
+        await page.waitForSelector('input[type=file]')
+        await page.waitFor(1000)
+
+        // get the ElementHandle of the selector above
+        const inputUploadHandle = await page.$('input[type=file]')
+
+        if (inputUploadHandle) {
+          await inputUploadHandle.uploadFile('public/hola.png')
+
+          await page.waitForSelector('.form__actions > .btn--primary')
+          await page.waitFor(1000)
+
+          page.click('.form__actions > .btn--primary')
+        }
+
+        await page.$eval(
+          '.listing-editor__title__text__suffix',
+          (e) => (e.value = 'Ralph Lauren Hoodie')
+        )
+
+        await page.$eval(
+          '.listing-editor__description__input',
+          (e) => (e.value = 'Comfiest sweater ive ever owned')
+        )
+
+        await page.click('[data-et-name=category]')
+
+        await page.$$eval('.dropdown__menu__item', (elements) => {
+          const element = elements.find(
+            (element) => element.innerHTML === '<a>Tops</a>'
+          )
+          element.click()
+        })
       }
 
       res.status(200).json({ data: 'yes' })
@@ -58,7 +93,46 @@ export default async (req, res) => {
     const share = await page.$('.sell')
 
     if (share) {
-      await postPosh()
+      page.click('.sell')
+        console.log('sell btn, 81')
+
+        await page.waitForSelector('input[type=file]')
+        await page.waitFor(1000)
+
+        // get the ElementHandle of the selector above
+        const inputUploadHandle = await page.$('input[type=file]')
+
+        if (inputUploadHandle) {
+          await inputUploadHandle.uploadFile('public/hola.png')
+
+          await page.waitForSelector('.form__actions > .btn--primary')
+          await page.waitFor(1000)
+
+          page.click('.form__actions > .btn--primary')
+        }
+
+        await page.$eval(
+          '.listing-editor__title__text__suffix',
+          (e) => (e.value = 'Ralph Lauren Hoodie')
+        )
+
+        await page.$eval(
+          '.listing-editor__description__input',
+          (e) => (e.value = 'Comfiest sweater ive ever owned')
+        )
+
+        await page.click('[data-et-name=category]')
+          console.log('125')
+        await page.$$eval('.dropdown__menu ws--nowrap > .dropdown__menu__item > dropdown__link', async (elements) => {
+          
+          const element = await elements.find(
+            (element) => {
+              console.log(element)
+              element.innerHTML === 'Tops'
+            }
+          )
+          element.click()
+        })
     }
 
     //second request
@@ -93,7 +167,6 @@ export default async (req, res) => {
       await page.waitFor(1000)
 
       page.click('.form__actions > .btn--primary')
-      
     }
 
     await page.$eval(
